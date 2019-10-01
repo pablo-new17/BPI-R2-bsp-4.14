@@ -15,6 +15,37 @@ BPISOC=mtk
 
 CUR_DIR=$PWD
 
+#I18N message for this shell script /* PABLO added 2019-10-01 */
+declare -A message_en_US
+declare -A message_zh_TW
+declare -A all_message
+
+message_en_US=(
+	[OK]="$1 configured. Now run \`make\`"
+	[ALREADY_EXIST]="environment file alread exist, do nothing."
+	[FAIL]="$1 configure failed."
+	[FORCE]="-f: force to generate the board environment shell script file"
+	[BOARD_LIST]="supported boards:"
+)
+message_zh_TW=(
+	[OK]="$1 設定成功. 請繼續執行 \`make\`"
+	[ALREADY_EXIST]="設定檔已存在，啥事也沒做"
+	[FAIL]="$1 設定失敗"
+	[FORCE]="-f: 強迫產生設定檔"
+	[BOARD_LIST]="所支援的板子:"
+)
+all_message=([en_US]=message_en_US [zh_TW]=message_zh_TW)
+
+i18n_message() {
+declare -A language
+
+	I18N=${LANGUAGE%%:*}
+	I18N=${I18N:-en_US}
+	language=${all_message[$I18N]}
+	eval message=\${$language[$1]}
+	echo $message
+}
+
 list_boards() {
 	(cd ${BPIPACK}/${BPISOC}/${TARGET_PRODUCT}/configs ; ls -1d BPI* )
 }
@@ -55,11 +86,11 @@ generate_board_envsh() {
 }
 
 usage() {
-	cat <<-EOT >&2
-	Usage: $0 <board>
+	echo "Usage: $0 <board> [-f]"
+	echo -ne "\t"
+	i18n_message "FORCE"
+	i18n_message "BOARD_LIST"
 
-	supported boards:
-	EOT
 	list_boards  #DK, update later
 }
 
@@ -67,16 +98,27 @@ if [ $# -eq 0 ]; then
 	usage
 	exit 1
 fi
+if [ $# -eq 2 -a "-f" != "$2" ]; then
+	usage
+	exit 1
+fi
+
 
 BOARD=$1
+FORCE=$2
 
-generate_board_envsh "$1" > env.sh
+if [ ! -e env.sh -o -n "$FORCE" ]; then
+	generate_board_envsh "$1" > env.sh
 
-out=chosen_board.mk
-if generate_board_mk "$1" > $out~; then
-	mv $out~ $out
-	echo "$1 configured. Now run \`make\`"
+	out=chosen_board.mk
+	if generate_board_mk "$1" > $out~; then
+		mv $out~ $out
+		i18n_message "OK"
+	else
+		rm $out~
+		i18n_message "FAIL"
+		exit 1
+	fi
 else
-	rm $out~
-	exit 1
+	i18n_message "ALREADY_EXIST"
 fi

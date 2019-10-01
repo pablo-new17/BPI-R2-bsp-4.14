@@ -35,7 +35,8 @@ sudo losetup -d ${LOOP_DEV}
 
 (dd if=${TMP_FILE} of=${IMG_FILE} bs=1k skip=2 count=1022 status=noxfer) >/dev/null 2>&1
 
+rm -f ${TMP_FILE}
 rm -f ${IMG_FILE}.gz
 echo "gzip ${IMG_FILE}"
 gzip ${IMG_FILE}
-rm -f ${TMP_FILE}
+

@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+#change the script interpreter from default sh (maybe DASH) to BASH /* PABLO changed 2019-10-01 */
+
 
 set -e
 
